@@ -155,6 +155,56 @@ func DeployEdgeAPPS(client kubernetes.Interface, manifestsDir, caCertFile, caKey
 	return nil
 }
 
+func EdgeClusterInit(client kubernetes.Interface, manifestsDir, caCertFile, caKeyFile, masterPublicAddr string, certSANs []string, configPath string, edgeadmConf *cmd.EdgeadmConfig) error {
+	if err := EnsureEdgeSystemNamespace(client); err != nil {
+		return err
+	}
+	// 可全部在用户集群helm中
+	if err := DeployEdgePreflight(client, manifestsDir,
+
+		"", configPath); err != nil {
+		return err
+	}
+	// Update Kube-* Config
+	if err := UpdateKubeConfig(client, edgeadmConf); err != nil {
+		klog.Errorf("Update kubeconfig, error: %s", err)
+		return err
+	}
+	klog.Infof("Update Kubernetes cluster config support marginal autonomy success")
+
+	// Prepare config join Node
+	// 这里生成lite-apiserver证书必须使用集群证书签发，因为不光kubelet很多其他pod也需要使用
+	// lite-apiserver代理访问，他们内置的是集群的ca，而且不能添加insecure-skip-verify
+	// 所以这里有两种方案，一种把lite-apiserver的证书放到 云端部分生成，另一种直接弃掉edgeadm整体逻辑，
+	// 将tkeedge 获取安装脚本平移到tke中
+	if err := JoinNodePrepare(client, manifestsDir, caCertFile, caKeyFile, edgeadmConf); err != nil {
+		klog.Errorf("Prepare config join Node error: %s", err)
+		return err
+	}
+	klog.Infof("Prepare join Node configMap success")
+
+	return nil
+}
+
+func EdgeClusterRestore(client kubernetes.Interface, manifestsDir, caCertFile, caKeyFile string, masterPublicAddr string, certSANs []string, configPath string) error {
+	// Recover Kube-* Config
+	if err := RecoverKubeConfig(client); err != nil {
+		klog.Errorf("Recover Kubernetes cluster config support marginal autonomy, error: %s", err)
+		return err
+	}
+	klog.Infof("Recover Kubernetes cluster config support marginal autonomy success")
+
+	// Delete lite-api-server Cert
+	if err := DeleteLiteApiServerCert(client); err != nil {
+		klog.Errorf("Recover lite-apiserver, error: %s", err)
+		return err
+	}
+	klog.Infof("Recover lite-apiserver configMap success")
+
+	return nil
+
+}
+
 func DeleteEdgex(client *kubernetes.Clientset, manifestsDir string, modules []bool) error {
 	option := map[string]interface{}{
 		"Namespace": constant.NamespaceEdgex,

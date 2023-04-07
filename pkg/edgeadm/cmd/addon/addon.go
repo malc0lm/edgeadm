@@ -18,7 +18,10 @@ package addon
 
 import (
 	"fmt"
+
 	"github.com/superedge/edgeadm/pkg/edgeadm/cmd"
+
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -26,7 +29,6 @@ import (
 	"k8s.io/client-go/util/homedir"
 	"k8s.io/klog/v2"
 	cmdutil "k8s.io/kubernetes/cmd/kubeadm/app/cmd/util"
-	"path/filepath"
 
 	"github.com/superedge/edgeadm/pkg/util/kubeclient"
 )
@@ -60,6 +62,7 @@ func NewAddonCMD() *cobra.Command {
 	cmd.AddCommand(NewInstallEdgeAppsCMD())
 	cmd.AddCommand(NewInstallEdgexCMD())
 	cmd.AddCommand(NewInstallTopolvmCMD())
+	cmd.AddCommand(NewEdgeInitCMD())
 	return cmd
 }
 
@@ -72,6 +75,7 @@ func NewDetachCMD() *cobra.Command {
 	cmd.AddCommand(NewDetachEdgeAppsCMD())
 	cmd.AddCommand(NewDetachEdgexCMD())
 	cmd.AddCommand(NewDetachTopolvmCMD())
+	cmd.AddCommand(NewEdgeRestoreCMD())
 	return cmd
 }
 

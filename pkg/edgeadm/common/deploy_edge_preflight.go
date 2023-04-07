@@ -113,6 +113,7 @@ func ensureBootstrapTokenRBAC(clientSet kubernetes.Interface, masterPublicAddr s
 	}
 
 	// Create the cluster-info ConfigMap with the associated RBAC rules
+	// 创建cluster-info 可在用户集群helm中
 	if err := createBootstrapConfigMapIfNotExists(clientSet, masterPublicAddr, manifestsDir, configPath); err != nil {
 		return errors.Wrap(err, "error creating bootstrap ConfigMap")
 	}
